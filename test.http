@@ -1,0 +1,26 @@
+### 创建笔记
+POST https://ideal-potato-4j95q9wxr54ghqw5-8080.app.github.dev/api/notes
+Content-Type: application/json
+
+{
+  "title": "My First Note",
+  "content": "This is a note created in Codespaces."
+}
+
+### 获取所有笔记
+GET https://ideal-potato-4j95q9wxr54ghqw5-8080.app.github.dev/api/notes
+
+### 获取单个笔记
+GET https://ideal-potato-4j95q9wxr54ghqw5-8080.app.github.dev/api/notes/1
+
+### 更新笔记
+PUT https://ideal-potato-4j95q9wxr54ghqw5-8080.app.github.dev/api/notes/1
+Content-Type: application/json
+
+{
+  "title": "Updated Note",
+  "content": "This note has been updated."
+}
+
+### 删除笔记
+DELETE https://ideal-potato-4j95q9wxr54ghqw5-8080.app.github.dev/api/notes/1
