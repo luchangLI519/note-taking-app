@@ -30,29 +30,43 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 USE_REMOTE_DB = False
 
 if DATABASE_URL:
+    print(f'INFO: DATABASE_URL is set (length: {len(DATABASE_URL)})')
     # Normalize 'postgres://' -> 'postgresql+psycopg2://'
     if DATABASE_URL.startswith('postgres://'):
         DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql+psycopg2://', 1)
+        print('INFO: Normalized postgres:// to postgresql+psycopg2://')
 
     # Try a quick test connection to avoid long startup hangs when the
     # remote DB (e.g. Supabase) is unreachable from this environment.
     try:
         from sqlalchemy import create_engine
+        print('INFO: Attempting to connect to remote database...')
         # Use a short connect timeout so startup fails fast if network blocks
         test_engine = create_engine(DATABASE_URL, connect_args={"connect_timeout": 5})
         with test_engine.connect() as conn:
             # successful connection
             USE_REMOTE_DB = True
             app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+            print('SUCCESS: Connected to remote database (Supabase)')
     except Exception as e:
-        print('WARNING: could not connect to DATABASE_URL, falling back to local SQLite. Error:', e)
+        print(f'WARNING: could not connect to DATABASE_URL, falling back to local SQLite. Error: {type(e).__name__}: {e}')
+else:
+    print('INFO: DATABASE_URL not set, using local SQLite')
 
 if not USE_REMOTE_DB:
     # Only create local database directory if using SQLite
-    ROOT_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-    DB_PATH = os.path.join(ROOT_DIR, 'database', 'app.db')
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    # On serverless platforms (Vercel), use /tmp which is writable
+    if os.environ.get('VERCEL'):
+        # Vercel serverless environment
+        DB_PATH = '/tmp/app.db'
+        print('INFO: Running on Vercel, using /tmp/app.db for SQLite')
+    else:
+        # Local development
+        ROOT_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+        DB_PATH = os.path.join(ROOT_DIR, 'database', 'app.db')
+        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{DB_PATH}"
+    print(f'INFO: Using SQLite at {DB_PATH}')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 with app.app_context():
