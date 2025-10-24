@@ -23,17 +23,12 @@ CORS(app)
 # register blueprints
 app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(note_bp, url_prefix='/api')
-# configure database to use repository-root `database/app.db`
-ROOT_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-DB_PATH = os.path.join(ROOT_DIR, 'database', 'app.db')
-# ensure database directory exists
-os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-
 # Allow overriding the DB via DATABASE_URL (useful for Supabase/Postgres)
 # Example DATABASE_URL: postgres://user:pass@db.host:5432/dbname
 DATABASE_URL = os.getenv('DATABASE_URL')
 # Flag that indicates whether we successfully connected to a remote DB.
 USE_REMOTE_DB = False
+
 if DATABASE_URL:
     # Normalize 'postgres://' -> 'postgresql+psycopg2://'
     if DATABASE_URL.startswith('postgres://'):
@@ -53,6 +48,10 @@ if DATABASE_URL:
         print('WARNING: could not connect to DATABASE_URL, falling back to local SQLite. Error:', e)
 
 if not USE_REMOTE_DB:
+    # Only create local database directory if using SQLite
+    ROOT_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+    DB_PATH = os.path.join(ROOT_DIR, 'database', 'app.db')
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{DB_PATH}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
